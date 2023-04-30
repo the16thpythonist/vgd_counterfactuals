@@ -9,11 +9,21 @@
 .. |version| image:: https://img.shields.io/badge/version-0.1.0-orange.svg
    :target: https://www.python.org/
 
+.. image:: banner.png
+
 =============
-Project Title
+VGD Counterfactuals
 =============
 
-Write a short project description / use the abstract of your publication !
+Library for the generation and more importantly the easy visualization of **Counterfactuals** for
+**Graph Neural Networks (GNNs)** based on the `Visual Graph Dataset`_ dataset format.
+
+.. _`Visual Graph Dataset`: https://github.com/the16thpythonist/visual_graph_datasets
+
+What are Counterfactuals?
+=========================
+
+To do: Explain how this is generally supposed to work
 
 Installation
 ============
@@ -39,6 +49,13 @@ Afterwards, you can check the install by invoking the CLI:
 
 Usage
 =====
+
+Quickstart
+----------
+
+The generation of counterfactual graphs requires the following 4 pre-requisites.
+
+
 
 Computational Experiments
 -------------------------

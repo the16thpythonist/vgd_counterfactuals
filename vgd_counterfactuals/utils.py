@@ -58,6 +58,15 @@ class CsvString(click.ParamType):
             return value.split(',')
 
 
+# == DATA STRUCTURES UTILITY ==
+
+def invert_dict(data: dict) -> dict:
+    result = {}
+    for key, value in data.items():
+        result[value] = key
+
+    return result
+
 # == STRING UTILITY ==
 # These are some helper functions for some common string related problems
 
