@@ -67,6 +67,7 @@ def invert_dict(data: dict) -> dict:
 
     return result
 
+
 # == STRING UTILITY ==
 # These are some helper functions for some common string related problems
 
