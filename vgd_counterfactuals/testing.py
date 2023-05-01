@@ -2,9 +2,10 @@ import typing as t
 
 import numpy as np
 import visual_graph_datasets.typing as vt
+from visual_graph_datasets.models import PredictGraphMixin
 
 
-class MockModel:
+class MockModel(PredictGraphMixin):
 
     def predict_graph(self, graph: vt.GraphDict) -> float:
         node_averages = np.mean(graph['node_attributes'], axis=-1)
