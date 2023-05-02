@@ -2,22 +2,27 @@
 
 .. |made-with-python| image:: https://img.shields.io/badge/Made%20with-Python-1f425f.svg
    :target: https://www.python.org/
+   :alt: made with python
 
 .. |python-version| image:: https://img.shields.io/badge/Python-3.8.0-green.svg
    :target: https://www.python.org/
+   :alt: python 3.8
 
 .. |version| image:: https://img.shields.io/badge/version-0.1.0-orange.svg
    :target: https://www.python.org/
+   :alt: version
 
 .. image:: banner.png
    :alt: banner image
 
-=============
+===================
 VGD Counterfactuals
-=============
+===================
 
 Library for the generation and more importantly the easy visualization of **Counterfactuals** for
-**Graph Neural Networks (GNNs)** based on the `VisualGraphDatasets`_ dataset format.
+**Graph Neural Networks (GNNs)** based on the
+`VisualGraphDatasets <https://github.com/awa59kst120df/visual_graph_datasets>`_
+dataset format.
 
 What are Counterfactuals?
 =========================
@@ -35,20 +40,20 @@ w.r.t. to the allowed, domain-specific graph edit operations.
 Installation
 ============
 
-.. code-block:: shell
+.. code-block:: console
 
     git clone https://github.com/the16thpythonist/vgd_counterfactuals
 
 Then in the main folder run a ``pip install``:
 
-.. code-block:: shell
+.. code-block:: console
 
     cd vgd_counterfactuals
     python3 -m pip install .
 
 Afterwards, you can check the install by invoking the CLI:
 
-.. code-block:: shell
+.. code-block:: console
 
     python3 -m vgd_counterfactuals.cli --version
     python3 -m vgd_counterfactuals.cli --help
@@ -65,7 +70,7 @@ The instantiation of one such object requires the following 4 main components:
 
 - ``processing``: A visual_graph_dataset "Processing" object. These implement the necessary functionality
   to convert a domain-specific graph representation into the full graph structure for the machine learning
-  models. These are shipped with each specific visual graph dataest.
+  models. These are shipped with each specific visual graph dataset.
 - ``model``: The model to be explained. This model has to implement the visual_graph_dataset "PredictGraph"
   interface to ensure that the model can be directly queried with the vgd GraphDict representation of
   graph elements.
@@ -134,14 +139,13 @@ have a look at the example modules provided in the ``examples`` folder of the re
 Credits
 =======
 
-* PyComex_ is a micro framework which simplifies the setup, processing and management of computational
+* `PyComex <https://github.com/the16thpythonist/pycomex.git>`_
+  is a micro framework which simplifies the setup, processing and management of computational
   experiments. It is also used to auto-generate the command line interface that can be used to interact
   with these experiments.
-* VisualGraphDatasets_ is a library which deals with the VGD dataset format. In this format, graph datasets
+* `VisualGraphDatasets <https://github.com/awa59kst120df/visual_graph_datasets>`_
+  is a library which deals with the VGD dataset format. In this format, graph datasets
   for machine learning are represented by a folder, where each graph is represented by *two* files: A
   metadata JSON file that contains the full graph representation and additional metadata and a PNG
   visualization of the graph. The library aims to provide a framework for explainable graph machine learning
   which is easier to use and produces more reproducable results.
-
-.. _PyComex: https://github.com/the16thpythonist/pycomex.git
-.. _VisualGraphDatasets: https://github.com/awa59kst120df/visual_graph_datasets
