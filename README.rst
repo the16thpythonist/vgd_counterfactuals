@@ -10,15 +10,14 @@
    :target: https://www.python.org/
 
 .. image:: banner.png
+   :alt: banner image
 
 =============
 VGD Counterfactuals
 =============
 
 Library for the generation and more importantly the easy visualization of **Counterfactuals** for
-**Graph Neural Networks (GNNs)** based on the `Visual Graph Dataset`_ dataset format.
-
-.. _`Visual Graph Dataset`: https://github.com/the16thpythonist/visual_graph_datasets
+**Graph Neural Networks (GNNs)** based on the `VisualGraphDatasets`_ dataset format.
 
 What are Counterfactuals?
 =========================
@@ -145,4 +144,4 @@ Credits
   which is easier to use and produces more reproducable results.
 
 .. _PyComex: https://github.com/the16thpythonist/pycomex.git
-.. _VisualGraphDatasets: https://github.com/awa/visual_graph_datasets.git
+.. _VisualGraphDatasets: https://github.com/awa59kst120df/visual_graph_datasets

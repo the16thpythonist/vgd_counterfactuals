@@ -5,18 +5,23 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "vgd_counterfactuals"
 version = "0.1.0"
-description = "Insert Description"
+description = "Counterfactual explanations for GNNs based on the visual graph dataset format"
 license = "MIT license"
 authors = ["Jonas Teufel <jonseb1998@gmail.com>"]
 maintainers = ["Jonas Teufel <jonseb1998@gmail.com>"]
 readme = "README.rst"
-keywords = []
+keywords = ["graph neural networks", "counterfactuals", "explainable AI"]
 packages = [
     { include = "vgd_counterfactuals" },
     { include = "vgd_counterfactuals/experiments"},
 ]
 include = [
     "vgd_counterfactuals/VERSION",
+    "banner.png",
+]
+exclude = [
+    "venv",
+    "dist",
 ]
 
 [tool.poetry.scripts]
