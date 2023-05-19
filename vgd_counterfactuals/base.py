@@ -1,19 +1,45 @@
 import logging
 import os
+import itertools
+import multiprocessing
 import typing as t
 from copy import deepcopy
+
 
 import visual_graph_datasets.typing as tv
 from visual_graph_datasets.processing.base import ProcessingBase
 from visual_graph_datasets.data import load_visual_graph_dataset
 from visual_graph_datasets.data import load_visual_graph_element
+from visual_graph_datasets.util import Batched
 
 from vgd_counterfactuals.utils import NULL_LOGGER
 
 
 class CounterfactualGenerator:
     """
+    Generic implementation for the generation of counterfactuals.
 
+    An instance of this generator class has to be constructed with the following parameters: ``model`` must
+    be a (machine learning) model which implements the ``PredictGraphMixin`` and which predicts the
+    property of the graphs in question. ``processing`` must be an instance of ``ProcessingBase``, which
+    can process the domain specific representations of a graph (most of the time a string representation)
+    into a GraphDict and a visualization image. In that regard it is important that the correct processing
+    instance is used which is compatible with the used predictor model. ``distance_func`` should be a
+    callable function that determines the distance between two predictions of the model. The counterfactual
+    generation will try to maximize that measure of distance. ``neighborhood_func`` has to be a function
+    which receives the domain specific representation of an original graph and then returns the entire
+    1-edit neighborhood of that graph, which is legible to be a counterfactual.
+
+    :param model: A machine learning model which implements the PredictGraphMixin
+    :param processing: An instance of BaseProcessing, which can transform a domain specific
+        graph representation into a valid GraphDict for the model to make its prediction from.
+    :param neighborhood_func: A function which must accept a single positional parameter which is the
+        domain specific representation of a single graph. It should return a list of domain specific
+        representations of valid graphs which represent the entire 1-edit neighborhood of the original.
+    :param distance_func: A function which must accept two arguments: The original prediction and the
+        prediction of a counterfactual. It should return a single numeric value indicating the prediction
+        distance between the two elements. This distance measure will be used as the basis for the
+        counterfactual choice.
     """
 
     DEFAULT_IMAGE_WIDTH = 1000
@@ -25,12 +51,16 @@ class CounterfactualGenerator:
                  neighborhood_func: t.Callable,
                  distance_func: t.Callable[[t.Any, t.Any], float],
                  logger: logging.Logger = NULL_LOGGER,
+                 num_processes: int = 2,
+                 batch_size: int = 5_000,
                  ):
         self.model = model
         self.processing = processing
         self.neighborhood_func = neighborhood_func
         self.distance_func = distance_func
         self.logger = logger
+        self.num_processes = num_processes
+        self.batch_size = batch_size
 
     def generate(self,
                  original: tv.DomainRepr,
@@ -69,16 +99,30 @@ class CounterfactualGenerator:
         original_prediction = self.model.predict_graph(graph)
 
         # Based on the original we need ALL possible neighbors of this in a k-neighborhood
-        neighbors_set = set([original])
-        for i in range(k_neighborhood):
-            for value in deepcopy(neighbors_set):
-                neighbors_set.update(set(self.neighborhood_func(value)))
+        # 16.05.23 - For a larger neighborhood size the number of counterfactuals increases exponentially
+        # and generating them takes forever. That is why we use multiprocessing to do the generation in
+        # parallel and hopefully be a bit faster.
+        with multiprocessing.Pool(processes=self.num_processes) as pool:
+            neighbors_set = set([original])
+            for i in range(k_neighborhood):
+                neighbors_set = set(itertools.chain(*pool.map(self.neighborhood_func, neighbors_set)))
 
         # This will be a list of the domain-spec. representations of all the generated neighbors of
         # the original graph.
         neighbors: t.List[tv.DomainRepr] = list(neighbors_set)
         graphs = [self.processing.process(value) for value in neighbors]
-        predictions = self.model.predict_graphs(graphs)
+
+        # 16.05.23 - I have noticed that for larger neighborhood sizes there can be A LOT of counterfactuals
+        # so many that a model cannot possibly predict them all at once without causing a memory overflow
+        # for the resulting vector. This is why we need to process this in a batched manner now!
+        # NOTE: One might think that this could be parallelized as well, like the counterfactual generation
+        # itself, but that would actually not work because we cant serialize the model to send it to another
+        # process and loading the model from memory takes so long that it would not make sense to do that
+        # in each process either.
+        predictions = []
+        for graph_batch in Batched(graphs, batch_size=self.batch_size):
+            predictions += self.model.predict_graphs(graph_batch)
+
         distances = [self.distance_func(original_prediction, pred) for pred in predictions]
 
         sorted_results = sorted(

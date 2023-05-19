@@ -14,6 +14,7 @@ from vgd_counterfactuals.generate.molecules import get_free_valence_map
 from vgd_counterfactuals.generate.molecules import get_valid_bond_additions
 from vgd_counterfactuals.generate.molecules import get_valid_bond_removals
 from vgd_counterfactuals.generate.molecules import is_bridge_head_carbon
+from vgd_counterfactuals.generate.molecules import is_nitrogen_nitrogen_sulfur
 from .util import ARTIFACTS_PATH
 
 
@@ -96,6 +97,13 @@ def test_bridgehead_carbons_exclusion():
 
     match = is_bridge_head_carbon(mol)
     assert match is False
+
+
+def test_nitrogen_nitrogen_sulfur_exclusion():
+    smiles = 'SNNCCCCc1ccccc1'
+    mol = Chem.MolFromSmiles(smiles)
+    match = is_nitrogen_nitrogen_sulfur(mol)
+    assert match is True
 
 
 

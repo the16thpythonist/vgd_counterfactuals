@@ -19,3 +19,16 @@ Initial version
 - Added the possibility to add additional filters to the generation of a molecular neighborhood which
   exclude certain patterns for the resulting neighbors.
 - Added a default molecular filter which excludes bridge head carbon structures from appearing
+
+0.1.3 - 16.05.2023
+------------------
+
+- The counterfactual generation now uses multiprocessing for the generation of the graph neighborhood
+  itself.
+- The predictions for the counterfactuals are now batched to avoid memory overflows when too many
+  elements have to be assessed at once.
+
+0.1.4 - 19.05.2023
+------------------
+
+- Fixed the functionality for filtering the molecule neighborhood with SMARTS patterns.

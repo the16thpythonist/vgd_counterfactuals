@@ -8,7 +8,7 @@ from vgd_counterfactuals.utils import invert_dict
 DEFAULT_ATOM_VALENCE_MAP = {
     'C': 4,
     'N': 5,
-    'P': 5,
+    # 'P': 5,
     'O': 6,
     'F': 1,
     'Cl': 7,
@@ -27,10 +27,17 @@ def is_bridge_head_carbon(mol: Chem.Mol, pattern: str = '*1=**2=**=*1*2'):
     return is_match
 
 
+def is_nitrogen_nitrogen_sulfur(mol: Chem.Mol, pattern: str = 'SNN'):
+    smarts = Chem.MolFromSmarts(pattern)
+    is_match = mol.HasSubstructMatch(smarts)
+    return is_match
+
+
 def get_neighborhood(smiles: str,
                      atom_valence_map=DEFAULT_ATOM_VALENCE_MAP,
                      mol_filters: t.Sequence[t.Callable[[Chem.Mol], bool]] = (
                         is_bridge_head_carbon,
+                        is_nitrogen_nitrogen_sulfur,
                      ),
                      ) -> t.List[str]:
     """
@@ -76,9 +83,8 @@ def get_neighborhood(smiles: str,
     neighbors_filtered = []
     for smiles in neighbors_set:
         mol = Chem.MolFromSmiles(smiles)
-        for func in mol_filters:
-            if not func(mol):
-                continue
+        if any([func(mol) for func in mol_filters]):
+            continue
 
         neighbors_filtered.append(smiles)
 
