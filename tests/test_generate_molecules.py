@@ -7,6 +7,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from rdkit import Chem
 from visual_graph_datasets.visualization.base import create_frameless_figure
 from visual_graph_datasets.processing.molecules import MoleculeProcessing
+from visual_graph_datasets.visualization.molecules import mol_from_smiles
+from visual_graph_datasets.visualization.molecules import visualize_molecular_graph_from_mol
 
 from vgd_counterfactuals.base import CounterfactualGenerator
 from vgd_counterfactuals.generate.molecules import get_neighborhood
@@ -15,7 +17,31 @@ from vgd_counterfactuals.generate.molecules import get_valid_bond_additions
 from vgd_counterfactuals.generate.molecules import get_valid_bond_removals
 from vgd_counterfactuals.generate.molecules import is_bridge_head_carbon
 from vgd_counterfactuals.generate.molecules import is_nitrogen_nitrogen_sulfur
+from vgd_counterfactuals.generate.molecules import molecule_differences
+from vgd_counterfactuals.generate.molecules import molecule_differences_ecfp
 from .util import ARTIFACTS_PATH
+
+
+def test_molecule_delta():
+
+    # mol_0 = Chem.MolFromSmiles('COc1ccc(C2NC(=S)N3C(c4ccc(OC)cc4)NC(=S)N23)cc1')
+    # mol_1 = Chem.MolFromSmiles('COc1ccc(C2NC(S)N3C(c4ccc(OC)cc4)NC(=S)N23)cc1')
+    mol_0 = Chem.MolFromSmiles('COc1ccc2nc(N=C(N)N=C(S)Nc3cccc(C)c3)nc(C)c2c1')
+    mol_1 = Chem.MolFromSmiles('COc1ccc2nc(N=C(N)N=CNc3cccc(C)c3)nc(C)c2c1')
+
+    fig, rows = plt.subplots(ncols=2, nrows=2, figsize=(20, 20), squeeze=False)
+    ax_0, ax_1 = rows[0]
+    visualize_molecular_graph_from_mol(ax_0, mol_0, 1000, 1000)
+    visualize_molecular_graph_from_mol(ax_1, mol_1, 1000, 1000)
+
+    delta_0, delta_1 = molecule_differences(mol_0, mol_1)
+
+    ax_0, ax_1 = rows[1]
+    visualize_molecular_graph_from_mol(ax_0, mol_from_smiles(delta_0), 1000, 1000)
+    visualize_molecular_graph_from_mol(ax_1, mol_from_smiles(delta_1), 1000, 1000)
+
+    fig_path = os.path.join(ARTIFACTS_PATH, 'molecule_delta.pdf')
+    fig.savefig(fig_path)
 
 
 def test_get_neighborhood():

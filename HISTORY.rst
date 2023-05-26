@@ -32,3 +32,16 @@ Initial version
 ------------------
 
 - Fixed the functionality for filtering the molecule neighborhood with SMARTS patterns.
+
+0.1.5 - 26.05.2023
+------------------
+
+- Added the possibility to not use multiprocessing in the generator because I have the suspicion that
+  this causes major problems on the web server
+
+0.1.6 - 26.05.2023
+------------------
+
+- Added the optional ``predict_func`` parameter to the generator class which makes it possible to provide
+  a custom implementation of how the predictions are obtained from the model.
+- Other minor changes

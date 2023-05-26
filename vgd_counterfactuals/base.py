@@ -50,14 +50,16 @@ class CounterfactualGenerator:
                  processing: ProcessingBase,
                  neighborhood_func: t.Callable,
                  distance_func: t.Callable[[t.Any, t.Any], float],
+                 predict_func: t.Optional[t.Callable] = lambda model, graphs: model.predict_graphs(graphs),
                  logger: logging.Logger = NULL_LOGGER,
-                 num_processes: int = 2,
+                 num_processes: t.Optional[int] = None,
                  batch_size: int = 5_000,
                  ):
         self.model = model
         self.processing = processing
         self.neighborhood_func = neighborhood_func
         self.distance_func = distance_func
+        self.predict_func = predict_func
         self.logger = logger
         self.num_processes = num_processes
         self.batch_size = batch_size
@@ -69,6 +71,7 @@ class CounterfactualGenerator:
                  k_neighborhood: int = 1,
                  image_width: int = DEFAULT_IMAGE_WIDTH,
                  image_height: int = DEFAULT_IMAGE_HEIGHT,
+                 reverse: bool = False,
                  ) -> tv.VisGraphIndexDict:
         """
         Creates the ``k_results`` top counterfactuals for the prediction of the ``original`` element. The
@@ -88,6 +91,7 @@ class CounterfactualGenerator:
             NOTE: Computational load rises exponentially, increasing this value is not encouraged.
         :param image_height: The integer width in pixels for the visualization images.
         :param image_width: The integer height in pixels for the visualization images.
+        :param reverse: A boolean flag which will reverse the distance function if set.
 
         :returns: The visual graph dataset index_data_map for the created VGD elements of all the
             generated counterfactuals.
@@ -98,18 +102,11 @@ class CounterfactualGenerator:
         graph = self.processing.process(original)
         original_prediction = self.model.predict_graph(graph)
 
-        # Based on the original we need ALL possible neighbors of this in a k-neighborhood
-        # 16.05.23 - For a larger neighborhood size the number of counterfactuals increases exponentially
-        # and generating them takes forever. That is why we use multiprocessing to do the generation in
-        # parallel and hopefully be a bit faster.
-        with multiprocessing.Pool(processes=self.num_processes) as pool:
-            neighbors_set = set([original])
-            for i in range(k_neighborhood):
-                neighbors_set = set(itertools.chain(*pool.map(self.neighborhood_func, neighbors_set)))
-
-        # This will be a list of the domain-spec. representations of all the generated neighbors of
-        # the original graph.
-        neighbors: t.List[tv.DomainRepr] = list(neighbors_set)
+        # 26.05.23 - Instead of having the implementation here, it is now in its own function which will
+        # return a list of all the valid k-edit neighbors.
+        # Moving this had two purposes: (1) it's cleaner code and (2) now I have the potential to cache
+        # the results, which I have realized is a functionality I'll need in the future.
+        neighbors: t.List[tv.DomainRepr] = self.get_neighbors(original, k_neighborhood)
         graphs = [self.processing.process(value) for value in neighbors]
 
         # 16.05.23 - I have noticed that for larger neighborhood sizes there can be A LOT of counterfactuals
@@ -121,14 +118,21 @@ class CounterfactualGenerator:
         # in each process either.
         predictions = []
         for graph_batch in Batched(graphs, batch_size=self.batch_size):
-            predictions += self.model.predict_graphs(graph_batch)
+            # 26.05.2023 - Instead of calling "predict_graphs" directly, the way in which a model prediction
+            # is made is now further decoupled through a generic function "predict_func" that can be
+            # provided by the user, but which by default will still do the same thing and internally
+            # simply call "predict_graphs".
+            # This change was necessary, because I have realized that I needed to introduce the same
+            # decoupling to the web interface and this was the best solution to keep it consistent for
+            # the counterfactuals.
+            predictions += self.predict_func(self.model, graph_batch)
 
         distances = [self.distance_func(original_prediction, pred) for pred in predictions]
 
         sorted_results = sorted(
             zip(distances, neighbors, predictions, graphs),
             key=lambda tupl: tupl[0],  # sort by distance
-            reverse=True,  # sort in descending order
+            reverse=not reverse,  # sort in descending order by default
         )
         # If there are less neighbors in total than the desired number of results, we can only
         # provide as many as there are.
@@ -148,7 +152,8 @@ class CounterfactualGenerator:
                 additional_metadata={
                     'distance': distance,
                     'prediction': prediction
-                }
+                },
+                additional_graph_data={},
             )
 
         metadata_map, index_data_map = load_visual_graph_dataset(
@@ -157,6 +162,25 @@ class CounterfactualGenerator:
             log_step=10,
         )
         return index_data_map
+
+    def get_neighbors(self, original: tv.DomainRepr, k_neighborhood):
+        # Based on the original we need ALL possible neighbors of this in a k-neighborhood
+        # 16.05.23 - For a larger neighborhood size the number of counterfactuals increases exponentially
+        # and generating them takes forever. That is why we use multiprocessing to do the generation in
+        # parallel and hopefully be a bit faster.
+        neighbors_set = {original}
+        if self.num_processes is not None:
+            with multiprocessing.Pool(processes=self.num_processes) as pool:
+                for i in range(k_neighborhood):
+                    neighbors_set = set(itertools.chain(*pool.map(self.neighborhood_func, neighbors_set)))
+        else:
+            for i in range(k_neighborhood):
+                neighbors = []
+                for value in neighbors_set:
+                    neighbors += self.neighborhood_func(value)
+                neighbors_set = neighbors_set.union(set(neighbors))
+
+        return list(neighbors_set)
 
     def create(self,
                value: tv.DomainRepr,

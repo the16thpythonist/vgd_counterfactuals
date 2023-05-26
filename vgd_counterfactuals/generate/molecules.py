@@ -1,6 +1,8 @@
 import itertools
 import typing as t
 from rdkit import Chem
+from rdkit.Chem import rdFMCS
+from rdkit.Chem import AllChem
 
 from vgd_counterfactuals.utils import invert_dict
 
@@ -13,8 +15,48 @@ DEFAULT_ATOM_VALENCE_MAP = {
     'F': 1,
     'Cl': 7,
     'S': 6,
-
 }
+
+
+
+def molecule_differences(mol1: Chem.Mol,
+                         mol2: Chem.Mol,
+                         radius: int = 0,
+                         ) -> t.Tuple[str, str]:
+    """
+    """
+    for mol in [mol1, mol2]:
+        for atom in mol.GetAtoms():
+            value = sum(bond.GetBondType() + bond.GetBondDir() for bond in atom.GetBonds())
+            atom.SetIsotope(value)
+
+    mcs = rdFMCS.FindMCS(
+        [mol1, mol2],
+        atomCompare=rdFMCS.AtomCompare.CompareIsotopes,
+    )
+    common_substructure = Chem.MolFromSmarts(mcs.smartsString)
+
+    results = []
+    for mol in [mol1, mol2]:
+        match = mol.GetSubstructMatch(common_substructure)
+        non_matches = set([index for atom in mol.GetAtoms() if (index := atom.GetIdx()) not in match])
+        for r in range(radius):
+            neighbors = []
+            for atom_index in non_matches:
+                atom = mol.GetAtomWithIdx(atom_index)
+                neighbors += [a.GetIdx() for a in atom.GetNeighbors()]
+
+            non_matches.update(set(neighbors))
+
+        for atom in mol.GetAtoms():
+            atom.SetIsotope(0)
+
+        if len(non_matches) != 0:
+            results.append(Chem.MolFragmentToSmiles(mol, atomsToUse=list(non_matches)))
+        else:
+            results.append('')
+
+    return results
 
 
 def is_bridge_head_carbon(mol: Chem.Mol, pattern: str = '*1=**2=**=*1*2'):
