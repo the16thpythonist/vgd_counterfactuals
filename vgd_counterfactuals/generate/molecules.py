@@ -4,6 +4,7 @@ from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from rdkit.Chem import AllChem
 
+from dimorphite_dl import DimorphiteDL
 from vgd_counterfactuals.utils import invert_dict
 
 
@@ -16,47 +17,6 @@ DEFAULT_ATOM_VALENCE_MAP = {
     'Cl': 7,
     'S': 6,
 }
-
-
-
-def molecule_differences(mol1: Chem.Mol,
-                         mol2: Chem.Mol,
-                         radius: int = 0,
-                         ) -> t.Tuple[str, str]:
-    """
-    """
-    for mol in [mol1, mol2]:
-        for atom in mol.GetAtoms():
-            value = sum(bond.GetBondType() + bond.GetBondDir() for bond in atom.GetBonds())
-            atom.SetIsotope(value)
-
-    mcs = rdFMCS.FindMCS(
-        [mol1, mol2],
-        atomCompare=rdFMCS.AtomCompare.CompareIsotopes,
-    )
-    common_substructure = Chem.MolFromSmarts(mcs.smartsString)
-
-    results = []
-    for mol in [mol1, mol2]:
-        match = mol.GetSubstructMatch(common_substructure)
-        non_matches = set([index for atom in mol.GetAtoms() if (index := atom.GetIdx()) not in match])
-        for r in range(radius):
-            neighbors = []
-            for atom_index in non_matches:
-                atom = mol.GetAtomWithIdx(atom_index)
-                neighbors += [a.GetIdx() for a in atom.GetNeighbors()]
-
-            non_matches.update(set(neighbors))
-
-        for atom in mol.GetAtoms():
-            atom.SetIsotope(0)
-
-        if len(non_matches) != 0:
-            results.append(Chem.MolFragmentToSmiles(mol, atomsToUse=list(non_matches)))
-        else:
-            results.append('')
-
-    return results
 
 
 def is_bridge_head_carbon(mol: Chem.Mol, pattern: str = '*1=**2=**=*1*2'):
@@ -75,12 +35,33 @@ def is_nitrogen_nitrogen_sulfur(mol: Chem.Mol, pattern: str = 'SNN'):
     return is_match
 
 
+def fix_protonation_dimorphite(smiles_list: t.List[str],
+                               min_ph: float,
+                               max_ph: float,
+                               ) -> t.List[str]:
+    dmph = DimorphiteDL(
+        min_ph=min_ph,
+        max_ph=max_ph,
+        max_variants=10,
+        label_states=False,
+        pka_precision=1.0,
+    )
+    result = list(itertools.chain.from_iterable(
+        [dmph.protonate(smiles) for smiles in smiles_list]
+    ))
+
+    return result
+
+
 def get_neighborhood(smiles: str,
                      atom_valence_map=DEFAULT_ATOM_VALENCE_MAP,
-                     mol_filters: t.Sequence[t.Callable[[Chem.Mol], bool]] = (
+                     mol_filters: t.Sequence[t.Callable[[Chem.Mol], t.List[str]]] = (
                         is_bridge_head_carbon,
                         is_nitrogen_nitrogen_sulfur,
                      ),
+                     fix_protonation: bool = False,
+                     max_ph: float = 6.4,
+                     min_ph: float = 6.4,
                      ) -> t.List[str]:
     """
     Given a ``smiles`` representation of a molecule, this function will return a list of the SMILES
@@ -98,39 +79,61 @@ def get_neighborhood(smiles: str,
 
     :returns: A list of strings
     """
-    neighbors_set = set()
+    neighbors = []
 
     mol = Chem.MolFromSmiles(smiles)
     free_valence_indices_map = get_free_valence_map(mol)
 
-    neighbors_set.update(get_valid_atom_additions(
+    neighbors += get_valid_atom_additions(
         mol=mol,
         atom_valence_map=atom_valence_map,
         free_valence_indices_map=free_valence_indices_map,
-    ))
+    )
 
-    neighbors_set.update(get_valid_bond_additions(
+    neighbors += get_valid_bond_additions(
         mol=mol,
         free_valence_indices_map=free_valence_indices_map,
-    ))
+    )
 
-    neighbors_set.update(get_valid_bond_removals(
+    neighbors += get_valid_bond_removals(
         mol=mol
-    ))
+    )
 
     # 15.05.23 - All of the above functions will create "valid" molecular SMILES in the sense that RDKit
     # does not tell us that they are completely wrong, but the molecules that are created might still not
     # realistically exist in chemistry, which is why we additionally apply a set of filters that decide
     # for each molecule if it should be included
     neighbors_filtered = []
-    for smiles in neighbors_set:
-        mol = Chem.MolFromSmiles(smiles)
+    for data in neighbors:
+        mol = data['mol']
         if any([func(mol) for func in mol_filters]):
             continue
 
-        neighbors_filtered.append(smiles)
+        neighbors_filtered.append(data)
 
-    return neighbors_filtered
+    neighbors = neighbors_filtered
+
+    # 01.06.2023 - One problem we have encountered when dealing with the counterfactuals for the aggregation
+    # task is that the generated molecules are often times not "realistic" in the sense that they are not
+    # correctly protonated for the target pH range of the task.
+    # This is why we introduce the option to fix the protonation state of these with an external tool here.
+    if fix_protonation:
+        neighbors_protonated = []
+        dmph = DimorphiteDL(
+            min_ph=min_ph,
+            max_ph=max_ph,
+            max_variants=10,
+            label_states=False,
+            pka_precision=1.0,
+        )
+        for data in neighbors:
+            smiles_protonated = dmph.protonate(data['value'])
+            for smiles in smiles_protonated:
+                neighbors_protonated.append({**data, 'value': smiles})
+
+        neighbors = neighbors_protonated
+
+    return neighbors
 
 
 def get_free_valence_map(mol: Chem.Mol, max_valence: int = 8) -> dict:
@@ -148,14 +151,25 @@ def get_free_valence_map(mol: Chem.Mol, max_valence: int = 8) -> dict:
 def get_valid_atom_additions(mol: Chem.Mol,
                              atom_valence_map: t.Dict[str, int],
                              free_valence_indices_map: t.Dict[int, t.List[int]]
-                             ) -> t.Set[str]:
+                             ) -> t.List[dict]:
     """
     Given a molecule ``mol``, this function will return a list of SMILES strings that represent valid
     atom additions to the base molecule.
 
-    :returns: A list of strings.
+    :param mol: The original molecule for which to calculate the modifications
+    :param atom_valence_map: A dict whose keys are string identifiers of atom types (O, N, S...) and the
+        values are the integer valences associated with these atom types.
+    :param free_valence_indices_map: A dict whose keys are integer values for possible atom valences in the
+        molecule and the values are lists containing integer node indices of all the atoms which have that
+        corresponding valence.
+
+    :returns: A list of dictionaries which define the valid modifications. Each dictionary has the keys
+        - mol: The mol object of the NEW molecule
+        - smiles: The SMILES string of the NEW molecule
+        - org: The integer atom index of the ORIGINAL molecule where the modification originates
+        - mod: The integer atom index of the NEW molecule where the modification occurred
     """
-    results = set()
+    results = []
 
     value_bond_type_map = {
         1: Chem.BondType.SINGLE,
@@ -173,15 +187,21 @@ def get_valid_atom_additions(mol: Chem.Mol,
                 if sanitization_result:
                     continue
 
-                smiles = Chem.MolToSmiles(new_mol)
-                results.add(smiles)
+                smiles = Chem.MolToSmiles(new_mol, canonical=False, rootedAtAtom=0)
+                results.append({
+                    'type':     'add_node',
+                    'mol':      new_mol,
+                    'value':    smiles,
+                    'org':      (atom, atom),
+                    'mod':      (atom, idx),
+                })
 
     return results
 
 
 def get_valid_bond_additions(mol: Chem.Mol,
                              free_valence_indices_map: t.Dict[int, t.List[int]]
-                             ) -> t.Set[str]:
+                             ) -> t.List[dict]:
     """
     Given a molecule ``mol``, this function will return a list of SMILES strings which results from valid
     bond additions to that base molecule. Valid bond additions in this case are defined as allowed in
@@ -197,7 +217,7 @@ def get_valid_bond_additions(mol: Chem.Mol,
 
     :returns: A list of strings
     """
-    results = set()
+    results = []
 
     value_bond_type_map = {
         0: None,
@@ -240,14 +260,20 @@ def get_valid_bond_additions(mol: Chem.Mol,
             if sanitization_result:
                 continue
 
-            smiles = Chem.MolToSmiles(new_mol)
-            results.add(smiles)
+            smiles = Chem.MolToSmiles(new_mol, canonical=False, rootedAtAtom=0)
+            results.append({
+                'type':     'modify_edge',
+                'mol':      new_mol,
+                'value':    smiles,
+                'org':      (atom1, atom2),
+                'mod':      (atom1, atom2),
+            })
 
     return results
 
 
 def get_valid_bond_removals(mol: Chem.Mol
-                            ) -> t.Set[str]:
+                            ) -> t.List[dict]:
     """
     Given a molecule ``mol``, this function will return a list of SMILES strings which represent valid
     bond removals. A bond removal is either a downgrade of an existing bond (e.g. double to single) or the
@@ -258,7 +284,7 @@ def get_valid_bond_removals(mol: Chem.Mol
 
     :returns: A list of strings
     """
-    results = set()
+    results = []
 
     value_bond_type_map = {
         0: None,
@@ -270,6 +296,7 @@ def get_valid_bond_removals(mol: Chem.Mol
 
     for valence in [1, 2, 3]:
         for bond in mol.GetBonds():
+            atom_removed = None
             atom1, atom2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
             bond = Chem.Mol(mol).GetBondBetweenAtoms(atom1, atom2)
 
@@ -283,8 +310,17 @@ def get_valid_bond_removals(mol: Chem.Mol
             bond_value = bond_type_value_map[bond_type]
             bond_value -= valence
 
+            # In this case, if the bond value has been evaluated to zero then that means that we want to
+            # completely remove that bond.
             if bond_value == 0:
                 new_mol.RemoveBond(atom1, atom2)
+
+                if new_mol.GetAtomWithIdx(atom1).GetDegree() == 0:
+                    new_mol.RemoveAtom(atom1)
+                    atom_removed = atom1
+                elif new_mol.GetAtomWithIdx(atom2).GetDegree() == 0:
+                    new_mol.RemoveAtom(atom2)
+                    atom_removed = atom2
 
             elif bond_value > 0:
                 bond.SetBondType(value_bond_type_map[bond_value])
@@ -298,7 +334,7 @@ def get_valid_bond_removals(mol: Chem.Mol
             if sanitization_result:
                 continue
 
-            smiles = Chem.MolToSmiles(new_mol)
+            smiles = Chem.MolToSmiles(new_mol, canonical=False, rootedAtAtom=0)
             if '.' in smiles:
                 parts = sorted(smiles.split('.'), key=len)
                 if len(parts[0]) > 1:
@@ -313,7 +349,15 @@ def get_valid_bond_removals(mol: Chem.Mol
 
                 smiles = parts[1]
 
-            results.add(smiles)
+            mod1 = atom1 if atom1 != atom_removed else atom2
+            mod2 = atom2 if atom2 != atom_removed else atom1
+            results.append({
+                'type':     'remove_edge' if atom_removed else 'modify_edge',
+                'mol':      new_mol,
+                'value':    smiles,
+                'org':      (atom1, atom2),
+                'mod':      (mod1, mod2),
+            })
 
     return results
 

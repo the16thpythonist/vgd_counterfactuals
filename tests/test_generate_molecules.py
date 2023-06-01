@@ -10,91 +10,167 @@ from visual_graph_datasets.processing.molecules import MoleculeProcessing
 from visual_graph_datasets.visualization.molecules import mol_from_smiles
 from visual_graph_datasets.visualization.molecules import visualize_molecular_graph_from_mol
 
+from vgd_counterfactuals.visualization import plot_modification
 from vgd_counterfactuals.base import CounterfactualGenerator
+from vgd_counterfactuals.generate.molecules import DEFAULT_ATOM_VALENCE_MAP
 from vgd_counterfactuals.generate.molecules import get_neighborhood
 from vgd_counterfactuals.generate.molecules import get_free_valence_map
+from vgd_counterfactuals.generate.molecules import get_valid_atom_additions
 from vgd_counterfactuals.generate.molecules import get_valid_bond_additions
 from vgd_counterfactuals.generate.molecules import get_valid_bond_removals
 from vgd_counterfactuals.generate.molecules import is_bridge_head_carbon
 from vgd_counterfactuals.generate.molecules import is_nitrogen_nitrogen_sulfur
-from vgd_counterfactuals.generate.molecules import molecule_differences
-from vgd_counterfactuals.generate.molecules import molecule_differences_ecfp
+from vgd_counterfactuals.generate.molecules import fix_protonation_dimorphite
 from .util import ARTIFACTS_PATH
 
 
-def test_molecule_delta():
-
-    # mol_0 = Chem.MolFromSmiles('COc1ccc(C2NC(=S)N3C(c4ccc(OC)cc4)NC(=S)N23)cc1')
-    # mol_1 = Chem.MolFromSmiles('COc1ccc(C2NC(S)N3C(c4ccc(OC)cc4)NC(=S)N23)cc1')
-    mol_0 = Chem.MolFromSmiles('COc1ccc2nc(N=C(N)N=C(S)Nc3cccc(C)c3)nc(C)c2c1')
-    mol_1 = Chem.MolFromSmiles('COc1ccc2nc(N=C(N)N=CNc3cccc(C)c3)nc(C)c2c1')
-
-    fig, rows = plt.subplots(ncols=2, nrows=2, figsize=(20, 20), squeeze=False)
-    ax_0, ax_1 = rows[0]
-    visualize_molecular_graph_from_mol(ax_0, mol_0, 1000, 1000)
-    visualize_molecular_graph_from_mol(ax_1, mol_1, 1000, 1000)
-
-    delta_0, delta_1 = molecule_differences(mol_0, mol_1)
-
-    ax_0, ax_1 = rows[1]
-    visualize_molecular_graph_from_mol(ax_0, mol_from_smiles(delta_0), 1000, 1000)
-    visualize_molecular_graph_from_mol(ax_1, mol_from_smiles(delta_1), 1000, 1000)
-
-    fig_path = os.path.join(ARTIFACTS_PATH, 'molecule_delta.pdf')
-    fig.savefig(fig_path)
+def test_fix_protonation_dimorphite():
+    """
+    The ``fix_protonation_dimorphite`` function should take a list of SMILES and fix them to account for
+    the correct protonation. The resulting list of SMILES may contain more SMILES that originally entered
+    because there may be different variants for the protonation.
+    """
+    # This is a particular molecule where the sulfur atom should not be protonated at the given standard
+    # ph range, which should be reflected in the result.
+    fixed = fix_protonation_dimorphite(['C1=CC=CC=C1CCCC(S)=O'], 6.4, 8.4)
+    assert 'O=C([S-])CCCc1ccccc1' in fixed
 
 
 def test_get_neighborhood():
 
-    smiles = 'CCCCCC'
+    smiles = 'CCCC(S)=O'
+    mol = Chem.MolFromSmiles(smiles)
 
-    neighbors = get_neighborhood(smiles)
+    neighbors = get_neighborhood(smiles, fix_protonation=False)
+    assert isinstance(neighbors, list)
     assert len(neighbors) != 0
 
-    processing = MoleculeProcessing()
-    pdf_path = os.path.join(ARTIFACTS_PATH, 'molecule_neighborhood.pdf')
+    pdf_path = os.path.join(ARTIFACTS_PATH, 'molecule_get_neighborhood.pdf')
     with PdfPages(pdf_path) as pdf:
-        for smiles in neighbors:
-            fig, ax = create_frameless_figure(1000, 1000)
-            image = processing.visualize(smiles, 1000, 1000)
-            ax.imshow(image)
+        for data in neighbors:
+            assert isinstance(data, dict)
+            assert 'value' in data
+            assert 'mol' in data
+
+            fig, (ax_org, ax_mod) = plt.subplots(ncols=2, nrows=1, figsize=(20, 10))
+            fig.suptitle(f'SMILES: {data["value"]}\n'
+                         f'modification: {data["type"]}')
+
+            node_positions_org, _ = visualize_molecular_graph_from_mol(ax_org, mol, 1000, 1000)
+            plot_modification(ax_org, node_positions_org, *data['org'])
+
+            new_mol = Chem.MolFromSmiles(data['value'])
+            node_positions_mod, _ = visualize_molecular_graph_from_mol(ax_mod, new_mol, 1000, 1000)
+            plot_modification(ax_mod, node_positions_mod, *data['mod'])
+
             pdf.savefig(fig)
             plt.close(fig)
 
-    smiles = 'O=O'
-    neighbors = get_neighborhood(smiles)
-    assert len(neighbors) != 0
-    print(neighbors)
-
 
 def test_get_valid_bond_additions():
-
-    smiles = 'CCCCCC'
+    """
+    ``get_valid_bond_additions`` is supposed to return a list of dictionaries which describe the valid
+    bond addition neighbors and the specific modification that was done to arrive at each new molecule.
+    """
+    smiles = 'CCCCC'
     mol = Chem.MolFromSmiles(smiles)
 
     free_valence_map = get_free_valence_map(mol)
-    result = get_valid_bond_additions(
+    results = get_valid_bond_additions(
         mol,
         free_valence_indices_map=free_valence_map
     )
-    print(result)
+
+    # This section will create a PDF file that visualizes the original and each new molecule on each page
+    # These visualizations will also point out the exact locations at which the modifications have been
+    # done to the molecule.
+    pdf_path = os.path.join(ARTIFACTS_PATH, 'get_valid_bond_additions.pdf')
+    with PdfPages(pdf_path) as pdf:
+        for data in results:
+            assert isinstance(data, dict)
+            assert 'value' in data
+            assert 'mol' in data
+
+            fig, (ax_org, ax_mod) = plt.subplots(ncols=2, nrows=1, figsize=(20, 10))
+            node_positions_org, _ = visualize_molecular_graph_from_mol(ax_org, mol, 1000, 1000)
+            plot_modification(ax_org, node_positions_org, *data['org'])
+
+            node_positions_mod, _ = visualize_molecular_graph_from_mol(ax_mod, data['mol'], 1000, 1000)
+            plot_modification(ax_mod, node_positions_mod, *data['mod'])
+
+            pdf.savefig(fig)
+            plt.close(fig)
+
+
+def test_get_valid_atom_additions():
+    """
+    ``get_valid_atom_additions`` is supposed to return a list of dictionaries which describe the valid
+    bond addition neighbors and the specific modification that was done to arrive at each new molecule.
+    """
+    smiles = 'CCC'
+    mol = Chem.MolFromSmiles(smiles)
+
+    free_valence_map = get_free_valence_map(mol)
+    results = get_valid_atom_additions(
+        mol,
+        atom_valence_map=DEFAULT_ATOM_VALENCE_MAP,
+        free_valence_indices_map=free_valence_map
+    )
+
+    # This section will create a PDF file that visualizes the original and each new molecule on each page
+    # These visualizations will also point out the exact locations at which the modifications have been
+    # done to the molecule.
+    pdf_path = os.path.join(ARTIFACTS_PATH, 'get_valid_atom_additions.pdf')
+    with PdfPages(pdf_path) as pdf:
+        for data in results:
+            assert isinstance(data, dict)
+            assert 'value' in data
+            assert 'mol' in data
+
+            fig, (ax_org, ax_mod) = plt.subplots(ncols=2, nrows=1, figsize=(20, 10))
+            node_positions_org, _ = visualize_molecular_graph_from_mol(ax_org, mol, 1000, 1000)
+            plot_modification(ax_org, node_positions_org, *data['org'])
+
+            node_positions_mod, _ = visualize_molecular_graph_from_mol(ax_mod, data['mol'], 1000, 1000)
+            plot_modification(ax_mod, node_positions_mod, *data['mod'])
+
+            pdf.savefig(fig)
+            plt.close(fig)
 
 
 def test_get_valid_bond_removals():
     """
-    get_valid_bond_removals is supposed to return a set of smiles which each represent a valid bond removal
-    action. These actions are either the removal of a single atom or the downgrade of a bond to a different
-    type.
+    ``get_valid_bond_removals`` is supposed to return a list of dictionaries which describe the valid
+    bond removal neighbors and the specific modification that was done to arrive at each new molecule.
     """
-    smiles = 'CCC=CC'
+    smiles = 'CCC=CC(CC=O)CCC(CC=C)CCC'
     mol = Chem.MolFromSmiles(smiles)
 
-    # For the given smiles we know that there are only three valid node removal actions, which are either
-    # the removal of an atom at either end of the chain or the downgrade of the double bond.
-    # ['CCCCC', 'C=CCC', 'CC=CC']
-    result = get_valid_bond_removals(mol)
-    assert len(result) != 0
-    assert len(result) == 3
+    results = get_valid_bond_removals(mol)
+    assert isinstance(results, list)
+    assert len(results) != 0
+
+    # This section will create a PDF file that visualizes the original and each new molecule on each page
+    # These visualizations will also point out the exact locations at which the modifications have been
+    # done to the molecule.
+    pdf_path = os.path.join(ARTIFACTS_PATH, 'get_valid_bond_removals.pdf')
+    with PdfPages(pdf_path) as pdf:
+        for data in results:
+            assert isinstance(data, dict)
+            assert 'value' in data
+            assert 'mol' in data
+
+            fig, (ax_org, ax_mod) = plt.subplots(ncols=2, nrows=1, figsize=(20, 10))
+            fig.suptitle(f'NEW SMILES: {data["value"]}')
+
+            node_positions_org, _ = visualize_molecular_graph_from_mol(ax_org, mol, 1000, 1000)
+            plot_modification(ax_org, node_positions_org, *data['org'])
+
+            node_positions_mod, _ = visualize_molecular_graph_from_mol(ax_mod, data['mol'], 1000, 1000)
+            plot_modification(ax_mod, node_positions_mod, *data['mod'])
+
+            pdf.savefig(fig)
+            plt.close(fig)
 
 
 def test_bridgehead_carbons_exclusion():

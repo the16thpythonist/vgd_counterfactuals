@@ -45,3 +45,20 @@ Initial version
 - Added the optional ``predict_func`` parameter to the generator class which makes it possible to provide
   a custom implementation of how the predictions are obtained from the model.
 - Other minor changes
+
+0.2.0 - 01.06.2023
+------------------
+
+- Changed the basic interface of how the ``neighborhood_func`` is supposed to work. The input is still
+  supposed to be a single original domain representation of the graph, but the output is now a list of
+  dictionaries where each dictionary not only encodes the modified graph itself but also additional
+  information about the modification such as what the indices of origin for the modification are and what
+  type of modification has resulted in that specific graph.
+- Also added an additional feature for the molecule ``get_neighborhood`` function where it is possible to
+  apply ph range specific protonation to the resulting SMILES to make them more "realistic"
+- Added ``dimorphite-dl`` to the dependencies
+
+TODO:
+
+- Fork the dimorphite package and add options to modify the way the SMILES are saved to better work to
+  not destroy the node indicing too much.

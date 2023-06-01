@@ -106,8 +106,8 @@ class CounterfactualGenerator:
         # return a list of all the valid k-edit neighbors.
         # Moving this had two purposes: (1) it's cleaner code and (2) now I have the potential to cache
         # the results, which I have realized is a functionality I'll need in the future.
-        neighbors: t.List[tv.DomainRepr] = self.get_neighbors(original, k_neighborhood)
-        graphs = [self.processing.process(value) for value in neighbors]
+        neighbors: t.List[dict] = self.get_neighbors(original, k_neighborhood)
+        graphs = [self.processing.process(data['value']) for data in neighbors]
 
         # 16.05.23 - I have noticed that for larger neighborhood sizes there can be A LOT of counterfactuals
         # so many that a model cannot possibly predict them all at once without causing a memory overflow
@@ -141,17 +141,20 @@ class CounterfactualGenerator:
 
         # For these top results we now want to create a visual graph dataset folder so that they can be
         # visualized and processed further
-        for index, (distance, value, prediction, graph) in enumerate(top_results):
+        for index, (distance, data, prediction, graph) in enumerate(top_results):
             self.processing.create(
-                value,
+                data['value'],
                 index=str(index),
-                name=value,
+                name=data['value'],
                 output_path=path,
                 width=image_width,
                 height=image_height,
                 additional_metadata={
-                    'distance': distance,
-                    'prediction': prediction
+                    'distance':             distance,
+                    'prediction':           prediction,
+                    'modification_type':    data['type'],
+                    'original_indices':     data['org'],
+                    'modified_indices':     data['mod'],
                 },
                 additional_graph_data={},
             )
@@ -168,19 +171,23 @@ class CounterfactualGenerator:
         # 16.05.23 - For a larger neighborhood size the number of counterfactuals increases exponentially
         # and generating them takes forever. That is why we use multiprocessing to do the generation in
         # parallel and hopefully be a bit faster.
-        neighbors_set = {original}
+        neighbors = [{'value': original, 'type': 'none', 'org': (0, 0), 'mod': (0, 0)}]
         if self.num_processes is not None:
             with multiprocessing.Pool(processes=self.num_processes) as pool:
                 for i in range(k_neighborhood):
-                    neighbors_set = set(itertools.chain(*pool.map(self.neighborhood_func, neighbors_set)))
+                    neighbors += list(itertools.chain.from_iterable(
+                        pool.map(self.neighborhood_func, [data['value'] for data in neighbors])
+                    ))
+
         else:
             for i in range(k_neighborhood):
-                neighbors = []
-                for value in neighbors_set:
-                    neighbors += self.neighborhood_func(value)
-                neighbors_set = neighbors_set.union(set(neighbors))
+                neighbors_local = []
+                for data in neighbors:
+                    neighbors_local += self.neighborhood_func(data['value'])
 
-        return list(neighbors_set)
+                neighbors += neighbors_local
+
+        return neighbors
 
     def create(self,
                value: tv.DomainRepr,

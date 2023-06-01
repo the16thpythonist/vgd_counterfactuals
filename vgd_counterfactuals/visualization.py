@@ -1,9 +1,24 @@
 import typing as t
 
+import numpy as np
 import matplotlib.pyplot as plt
 import visual_graph_datasets.typing as tv
 from matplotlib.backends.backend_pdf import PdfPages
 from imageio.v2 import imread
+
+
+def plot_modification(ax: plt.Axes,
+                      node_positions: np.ndarray,
+                      index1: t.Tuple[float, float],
+                      index2: t.Tuple[float, float],
+                      size: float = 500,
+                      alpha: float = 0.5,
+                      ) -> None:
+    pos1 = node_positions[index1]
+    pos2 = node_positions[index2]
+
+    ax.scatter(*pos1, s=size, color='red', alpha=alpha, zorder=-1, linewidths=0)
+    ax.scatter(*pos2, s=size, color='blue', alpha=alpha, zorder=-1, linewidths=0)
 
 
 def create_counterfactual_pdf(counterfactual_elements: t.List[tv.VgdElementDict],
