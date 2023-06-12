@@ -62,3 +62,18 @@ TODO:
 
 - Fork the dimorphite package and add options to modify the way the SMILES are saved to better work to
   not destroy the node indicing too much.
+
+
+0.3.0 - 12.06.2023
+------------------
+
+- changed the ``visual_graph_datasets`` version to 0.13.1 which implements the "unprocessing" feature
+- Added the module ``generate.colors`` which now implements counterfactual candidate generation for the 
+  the near future
+  - Added test cases for the color graph counterfactuals
+
+0.3.1 - 12.06.2023
+------------------
+
+- fixed a bug in the generation of color graph counterfactuals where the insertion of an edge added the 
+  wrong shape of edge_attributes

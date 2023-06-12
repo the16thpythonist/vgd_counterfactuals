@@ -8,7 +8,7 @@
    :target: https://www.python.org/
    :alt: python 3.8
 
-.. |version| image:: https://img.shields.io/badge/version-0.2.0-orange.svg
+.. |version| image:: https://img.shields.io/badge/version-0.3.2-orange.svg
    :target: https://www.python.org/
    :alt: version
 
