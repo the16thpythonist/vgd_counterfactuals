@@ -77,3 +77,11 @@ TODO:
 
 - fixed a bug in the generation of color graph counterfactuals where the insertion of an edge added the 
   wrong shape of edge_attributes
+
+0.3.3 - 20.10.2023
+------------------
+
+- Added another filter to the generation of the molecular neighborhood which prevents the existance of single 
+  atom neighbors as they would cause problems in downstream AI applications.
+- Added some more documentation
+- updated the readme file.

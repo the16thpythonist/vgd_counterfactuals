@@ -1,6 +1,7 @@
 import os
 import time
 import tempfile
+import typing as t
 
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
@@ -23,6 +24,21 @@ from vgd_counterfactuals.generate.molecules import is_nitrogen_nitrogen_sulfur
 from vgd_counterfactuals.generate.molecules import fix_protonation_dimorphite
 from .util import ARTIFACTS_PATH
 
+
+def test_bug_single_atom_counterfactuals():
+    """
+    20.10.23 - There is a problem with the counterfactuals of small molecules (with 2 atoms) which 
+    might generate a single atom neighbor throug edge deletion modifcations. Such single atom neighbors 
+    however cause problems in downstream AI applications.
+    Therefore we want to make sure that there are no single atom neighbors anymore throug a filter.
+    """
+    # This operation would cause an error
+    neighbors: t.List[dict] = get_neighborhood('CF')
+    assert len(neighbors) != 0
+    # We want to make sure that none of the generated neighbors is just a single atom!
+    for data in neighbors:
+        assert len(data['value']) > 1
+    
 
 def test_fix_protonation_dimorphite():
     """

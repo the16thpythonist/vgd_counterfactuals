@@ -59,11 +59,8 @@ Afterwards, you can check the install by invoking the CLI:
     python3 -m vgd_counterfactuals.cli --help
 
 
-Usage
-=====
-
 Quickstart
-----------
+==========
 
 The generation of counterfactual graphs is implemented via the ``CounterfactualGenerator`` class.
 The instantiation of one such object requires the following 4 main components:

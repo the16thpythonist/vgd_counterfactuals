@@ -19,6 +19,13 @@ DEFAULT_ATOM_VALENCE_MAP = {
 }
 
 
+# Molecule Filters
+# ----------------
+# There are some situations where the counterfactual generation might generate certain kinds of molecules 
+# that might be in the strictest sense chemically valid, but which still do not make realistic sense. These 
+# cases will be filtered from the results by applying a set of filter rules to the final generated counterfactual 
+# list. These filters are implemented as the possible callback functions below.
+
 def is_bridge_head_carbon(mol: Chem.Mol, pattern: str = '*1=**2=**=*1*2'):
     """
     Checks if the given molecule ``mol`` is a bridge head carbon structure which apparently does not
@@ -30,19 +37,59 @@ def is_bridge_head_carbon(mol: Chem.Mol, pattern: str = '*1=**2=**=*1*2'):
 
 
 def is_nitrogen_nitrogen_sulfur(mol: Chem.Mol, pattern: str = 'SNN'):
+    """
+    This checks if a molecules contains two nitrogen atoms connected to a sulfur atom in a chain. This is a 
+    configuration which does not really appear in nature.
+    """
     smarts = Chem.MolFromSmarts(pattern)
     is_match = mol.HasSubstructMatch(smarts)
     return is_match
 
 
+def is_single_atom(mol: Chem.Mol):
+    """
+    Checks if the given molecule is essentially just a single atom.
+    
+    We want to filter this trivial case, because it will likely cause problems for the downstream AI applications, 
+    since it is not possible to extract a valid graph representation that consists of just a single node.
+    """
+    num_atoms = len(mol.GetAtoms())
+    return num_atoms < 2
+
+
+# Protonation
+# -----------
+# Oftentimes, molecules exist in various different protonation states. That means that for a given molecule 
+# not all of the are always properly bonded to a hydrogen atom, but that they might exist in their charged 
+# form. For moderately large molecules, there exist many different permutations of which atoms are charged 
+# and which are properly protonated. Which of those states are possible at all depend on the pH of the 
+# environment.
+# In certain applications is might make sense to consider these different protonation states when generating 
+# the local neighborhood, which is implemented here.
+
+
 def fix_protonation_dimorphite(smiles_list: t.List[str],
                                min_ph: float,
                                max_ph: float,
+                               max_variants: float = 10,
                                ) -> t.List[str]:
+    """
+    This method generates the different protonation states in a given ph range ``min_ph`` and ``max_ph`` for 
+    each molecule represented as a SMILES string in the given ``smiles_list``.
+    
+    :param smiles_list: A list of smiles strings where each element represents a molecule for which to generate 
+        the protonation states.
+    :param min_ph: The min pH
+    :param max_ph: The max pH
+    :param max_variants: The max number of different protonation states to generate for each molecule.
+    
+    :returns: A list of SMILES which has either the same number of elements as the originally given list 
+        but more likely has more elements.
+    """
     dmph = DimorphiteDL(
         min_ph=min_ph,
         max_ph=max_ph,
-        max_variants=10,
+        max_variants=max_variants,
         label_states=False,
         pka_precision=1.0,
     )
@@ -53,11 +100,17 @@ def fix_protonation_dimorphite(smiles_list: t.List[str],
     return result
 
 
+# Counterfactual generation
+# --------------------------
+# The following functions implement the neighborhood generation process for the molecular graphs 
+
+
 def get_neighborhood(smiles: str,
                      atom_valence_map=DEFAULT_ATOM_VALENCE_MAP,
                      mol_filters: t.Sequence[t.Callable[[Chem.Mol], t.List[str]]] = (
                         is_bridge_head_carbon,
                         is_nitrogen_nitrogen_sulfur,
+                        is_single_atom,
                      ),
                      fix_protonation: bool = False,
                      max_ph: float = 6.4,
