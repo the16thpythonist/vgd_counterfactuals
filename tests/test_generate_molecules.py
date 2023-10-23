@@ -25,6 +25,28 @@ from vgd_counterfactuals.generate.molecules import fix_protonation_dimorphite
 from .util import ARTIFACTS_PATH
 
 
+def test_bug_none_molecule_neighbor():
+    """
+    23.10.23 - There is a bug with the creation of molecular neigbors. It turns out that in some very 
+    rare cases the neighborhood creation function can actually produce SMILES codes that are completely 
+    invalid such that RDKIT cant even parse them which then leads to an error in processing.process() 
+    for downstream tasks.
+    """
+    # The bug specifically appeared in this SMILES code for one of the generated neighbors.
+    smiles = 'Cc1ccc(cc1N\\N=C2\\C(=O)C(=Cc3ccccc23)C(=O)Nc4cc(C)c(NC(=O)C5=Cc6ccccc6C(=N/Nc7c(C)cccc7C(=O)OCCCl)/C5=O)cc4C)C(=O)OCCCl'
+    neighbors: t.List[dict] = get_neighborhood(smiles)
+    processing = MoleculeProcessing()
+    for index, data in enumerate(neighbors):
+        value = data['value']
+        print(index, value)
+        assert value is not None
+        assert len(value) > 1
+        # The bug would have happened at this line - the processing from a smiles into a molecular graph - for the 
+        # ~400th neighbor.
+        graph = processing.process(value)
+        assert isinstance(graph, dict)
+
+
 def test_bug_single_atom_counterfactuals():
     """
     20.10.23 - There is a problem with the counterfactuals of small molecules (with 2 atoms) which 

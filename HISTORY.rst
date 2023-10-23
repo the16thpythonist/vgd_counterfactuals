@@ -85,3 +85,9 @@ TODO:
   atom neighbors as they would cause problems in downstream AI applications.
 - Added some more documentation
 - updated the readme file.
+
+0.3.4 - 23.10.2023
+------------------
+
+- Fixed a rare bug where get_neighborhood for molecules would produce invalid SMILES codes that then led to 
+  a processing error down the line.

@@ -159,6 +159,14 @@ def get_neighborhood(smiles: str,
     neighbors_filtered = []
     for data in neighbors:
         mol = data['mol']
+        
+        # 23.10.23 - This additional filter is added to address a bug. It turns out that in some very rare 
+        # cases, the procedure actually produces completely invalid molecules that RDKIT cant even parse.
+        # and with this addtional line we filter these from the output.
+        if not Chem.MolFromSmiles(data['value']):
+            continue
+        
+        # If any of the filters returns "True" then we will omitt that corresponding molecules
         if any([func(mol) for func in mol_filters]):
             continue
 

@@ -8,7 +8,7 @@
    :target: https://www.python.org/
    :alt: python 3.8
 
-.. |version| image:: https://img.shields.io/badge/version-0.3.3-orange.svg
+.. |version| image:: https://img.shields.io/badge/version-0.3.4-orange.svg
    :target: https://www.python.org/
    :alt: version
 
@@ -25,7 +25,7 @@ Library for the generation and more importantly the easy visualization of **Coun
 dataset format.
 
 ❓ What are Counterfactuals?
-=========================
+============================
 
 Counterfactuals are a method of explaining the predictions of complex machine learning models. For a certain
 prediction of a model, a counterfactual is an input element that is as similar as possible to the original
@@ -38,7 +38,7 @@ distance function in regards to the prediction output over all immediate neighbo
 w.r.t. to the allowed, domain-specific graph edit operations.
 
 📦 Installation
-============
+===============
 
 .. code-block:: console
 
@@ -60,7 +60,7 @@ Afterwards, you can check the install by invoking the CLI:
 
 
 🚀 Quickstart
-==========
+=============
 
 The generation of counterfactual graphs is implemented via the ``CounterfactualGenerator`` class.
 The instantiation of one such object requires the following 4 main components:
@@ -132,9 +132,8 @@ have a look at the example modules provided in the ``examples`` folder of the re
                   f' - distance: {data["metadata"]["distance"]:.2f}')
 
 
-
 🤝 Credits
-=======
+==========
 
 * `PyComex <https://github.com/the16thpythonist/pycomex.git>`_
   is a micro framework which simplifies the setup, processing and management of computational
