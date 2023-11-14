@@ -112,6 +112,9 @@ def get_neighborhood(smiles: str,
                         is_nitrogen_nitrogen_sulfur,
                         is_single_atom,
                      ),
+                     use_atom_additions: bool = True,
+                     use_bond_additions: bool = False,
+                     use_bond_removals: bool = True,
                      fix_protonation: bool = False,
                      max_ph: float = 6.4,
                      min_ph: float = 6.4,
@@ -129,7 +132,13 @@ def get_neighborhood(smiles: str,
         replacing and atom!
     :param mol_filters: A list of functions which each take a Mol object as input and return a boolean value
         to determine whether that atom should be excluded (True) or not (False).
-
+    :param use_atom_additions: Whether to generate neighbors through the addition of new atoms.
+    :param use_bond_additions: Whether to generate neighbors through the formation of new bonds between existing 
+        elements.
+    :param use_bond_removals: Whether to generate neighbors through the modification of existing bonds
+    :param fix_protonation: Whether to apply the dimorphite_dl tool to generate the accurate protonation states 
+        for the molecules within a certain pH scale.
+        
     :returns: A list of strings
     """
     neighbors = []
@@ -137,20 +146,23 @@ def get_neighborhood(smiles: str,
     mol = Chem.MolFromSmiles(smiles)
     free_valence_indices_map = get_free_valence_map(mol)
 
-    neighbors += get_valid_atom_additions(
-        mol=mol,
-        atom_valence_map=atom_valence_map,
-        free_valence_indices_map=free_valence_indices_map,
-    )
+    if use_atom_additions:
+        neighbors += get_valid_atom_additions(
+            mol=mol,
+            atom_valence_map=atom_valence_map,
+            free_valence_indices_map=free_valence_indices_map,
+        )
 
-    neighbors += get_valid_bond_additions(
-        mol=mol,
-        free_valence_indices_map=free_valence_indices_map,
-    )
+    if use_bond_additions:
+        neighbors += get_valid_bond_additions(
+            mol=mol,
+            free_valence_indices_map=free_valence_indices_map,
+        )
 
-    neighbors += get_valid_bond_removals(
-        mol=mol
-    )
+    if use_bond_removals:
+        neighbors += get_valid_bond_removals(
+            mol=mol
+        )
 
     # 15.05.23 - All of the above functions will create "valid" molecular SMILES in the sense that RDKit
     # does not tell us that they are completely wrong, but the molecules that are created might still not

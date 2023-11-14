@@ -91,3 +91,11 @@ TODO:
 
 - Fixed a rare bug where get_neighborhood for molecules would produce invalid SMILES codes that then led to 
   a processing error down the line.
+
+0.3.5 - 14.11.2023
+------------------
+
+- For the generation of molecule neighbors, added parameters which can control what operations to be applied 
+  to the original molecule to generate the neighbors
+  - Set the default value for the "bond addition" operation to False as that operation often leads to molecules 
+    which do not make a lot of realisitic sense.
