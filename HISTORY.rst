@@ -99,3 +99,10 @@ TODO:
   to the original molecule to generate the neighbors
   - Set the default value for the "bond addition" operation to False as that operation often leads to molecules 
     which do not make a lot of realisitic sense.
+
+0.3.7 - 11.09.2024
+------------------
+
+- set the default configuration of the dimorphite protonation to ph 7.4
+- Added a filter for the molecular neighborhood generation which prevents the inclusion of neighbors with a 
+  oxygen-halogen bond as that is very unlikely configuration in real life.

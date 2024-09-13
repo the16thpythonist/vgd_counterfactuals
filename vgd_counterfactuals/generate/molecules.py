@@ -57,6 +57,17 @@ def is_single_atom(mol: Chem.Mol):
     return num_atoms < 2
 
 
+def is_oxygen_halogen(mol: Chem.Mol, pattern: str = '[O][O,F,Cl,Br,I]'):
+    """
+    Checks if the molecule contains an oxygen halogen bond.
+    
+    This is a configuration that is not very common in nature and should therefore be filtered out.
+    """
+    smarts = Chem.MolFromSmarts(pattern)
+    is_match = mol.HasSubstructMatch(smarts)
+    return is_match
+
+
 # Protonation
 # -----------
 # Oftentimes, molecules exist in various different protonation states. That means that for a given molecule 
@@ -111,13 +122,16 @@ def get_neighborhood(smiles: str,
                         is_bridge_head_carbon,
                         is_nitrogen_nitrogen_sulfur,
                         is_single_atom,
+                        is_oxygen_halogen,
                      ),
                      use_atom_additions: bool = True,
                      use_bond_additions: bool = False,
                      use_bond_removals: bool = True,
+                     # protonation related parameters
                      fix_protonation: bool = False,
-                     max_ph: float = 6.4,
-                     min_ph: float = 6.4,
+                     max_ph: float = 7.4,
+                     min_ph: float = 7.4,
+                     pka_precision: float = 1.0,
                      ) -> t.List[str]:
     """
     Given a ``smiles`` representation of a molecule, this function will return a list of the SMILES
@@ -197,7 +211,7 @@ def get_neighborhood(smiles: str,
             max_ph=max_ph,
             max_variants=10,
             label_states=False,
-            pka_precision=1.0,
+            pka_precision=pka_precision,
         )
         for data in neighbors:
             smiles_protonated = dmph.protonate(data['value'])

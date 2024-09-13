@@ -100,7 +100,7 @@ class CounterfactualGenerator:
         # the prediction of the original element. To get this prediction we first need
         # to convert the domain-specific representation into a GraphDict
         graph = self.processing.process(original)
-        original_prediction = self.model.predict_graph(graph)
+        original_prediction = self.predict_func(self.model, [graph])[0]
 
         # 26.05.23 - Instead of having the implementation here, it is now in its own function which will
         # return a list of all the valid k-edit neighbors.
