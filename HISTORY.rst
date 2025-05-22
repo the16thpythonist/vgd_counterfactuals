@@ -106,3 +106,10 @@ TODO:
 - set the default configuration of the dimorphite protonation to ph 7.4
 - Added a filter for the molecular neighborhood generation which prevents the inclusion of neighbors with a 
   oxygen-halogen bond as that is very unlikely configuration in real life.
+
+0.3.11 - 21.05.2025
+-------------------
+
+- Fixed the problem that the ``dimorphite-dl`` package was no longer available on pypi and replaced it 
+  with an alternative package.
+  

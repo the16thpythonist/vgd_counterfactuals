@@ -1,10 +1,10 @@
 import itertools
 import typing as t
+import dimorphite_dl
 from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from rdkit.Chem import AllChem
 
-from dimorphite_dl import DimorphiteDL
 from vgd_counterfactuals.utils import invert_dict
 
 
@@ -97,15 +97,15 @@ def fix_protonation_dimorphite(smiles_list: t.List[str],
     :returns: A list of SMILES which has either the same number of elements as the originally given list 
         but more likely has more elements.
     """
-    dmph = DimorphiteDL(
-        min_ph=min_ph,
-        max_ph=max_ph,
-        max_variants=max_variants,
-        label_states=False,
-        pka_precision=1.0,
-    )
+    
     result = list(itertools.chain.from_iterable(
-        [dmph.protonate(smiles) for smiles in smiles_list]
+        [dimorphite_dl.run(
+            smiles,
+            min_ph=min_ph,
+            max_ph=max_ph,
+            max_variants=max_variants,
+            pka_precision=1.0,
+        ) for smiles in smiles_list]
     ))
 
     return result
@@ -206,15 +206,18 @@ def get_neighborhood(smiles: str,
     # This is why we introduce the option to fix the protonation state of these with an external tool here.
     if fix_protonation:
         neighbors_protonated = []
-        dmph = DimorphiteDL(
-            min_ph=min_ph,
-            max_ph=max_ph,
-            max_variants=10,
-            label_states=False,
-            pka_precision=pka_precision,
-        )
+        
         for data in neighbors:
-            smiles_protonated = dmph.protonate(data['value'])
+            
+            smiles_protonated = dimorphite_dl.run(
+                data['value'],
+                min_ph=min_ph,
+                max_ph=max_ph,
+                max_variants=10,
+                label_states=False,
+                pka_precision=pka_precision,
+            )
+            
             for smiles in smiles_protonated:
                 neighbors_protonated.append({**data, 'value': smiles})
 
