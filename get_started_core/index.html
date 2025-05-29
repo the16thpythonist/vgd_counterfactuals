@@ -506,12 +506,35 @@
   
   
     <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tutorials_megan/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
-    Using MEGAN
+    Using 👩‍🏫 MEGAN
     
   </span>
   
@@ -662,7 +685,7 @@
 <h2 id="graph-domains">🗺️ Graph Domains</h2>
 <p>One important consideration for the generation of counterfactuals as described in the previous paragraph is that <em>not all graphs are the same</em>. The rules of what constitutes a valid graph structure&mdash;and what modifications are allowed&mdash;depend on the <em>domain</em> of where the graph originates from.</p>
 <p>For example, a molecular graph is a specific type of graph where nodes represent atoms and edges represent chemical bonds. In this case, there are very specific rules about which kinds of connections between atoms are allowed to constitute a <em>valid</em> molecule. Such a molecular graph needs completely different rules than an electrical circuit graph, where nodes represents connections and edges represent electrical components.</p>
-<p>Ultimately, the 🗺️ graph domain heavily influences how counterfactuals need to be generated, which is why they are a core concept of the <code>vgd_counterfactuals</code> library. Currently, the following domains are supported:</p>
+<p>Ultimately, the <em>🗺️ graph domain</em> heavily influences how counterfactuals need to be generated, which is why they are a core concept of the <code>vgd_counterfactuals</code> library. Currently, the following domains are supported:</p>
 <ul>
 <li><strong>Simple Color Graphs</strong>: For testing and demonstration purposes, where nodes are colored and edges connect nodes of different colors.</li>
 <li><strong>Molecular Graphs</strong>: Using RDKit and SMILES notation, where nodes represent atoms and edges represent chemical bonds.</li>
