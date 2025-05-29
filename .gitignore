@@ -2,6 +2,7 @@ venv/*
 .venv/*
 
 dist/*
+docs/site/*
 vgd_counterfactuals/experiments/results/*
 vgd_counterfactuals/examples/results/*
 

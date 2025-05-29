@@ -1,6 +1,6 @@
 # Using MEGAN
 
-This section will showcase a simple example of how to use the ``vgd_counterfactuals`` library with the [Multi-Explanation Graph Attention Network (MEGAN)](https://github.com/aimat-lab/graph_attention_student) model to generate counterfactuals on top of the attributional explanations provided by MEGAN.
+This section will showcase a simple application example of how to use the ``vgd_counterfactuals`` library with the [👩‍🏫 Multi-Explanation Graph Attention Network (MEGAN)](https://github.com/aimat-lab/graph_attention_student) model to generate counterfactuals on top of the attributional explanations provided by MEGAN.
 
 ## Pre-requisites
 

@@ -29,4 +29,5 @@ nav:
       - Core Concepts: get_started_core.md
       - Introduction by Example: get_started_example.md
   - Tutorials:
-      - Using MEGAN: tutorials_megan.md
+      - Overview: tutorials.md
+      - Using 👩‍🏫 MEGAN: tutorials_megan.md

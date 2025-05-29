@@ -30,7 +30,7 @@ One important consideration for the generation of counterfactuals as described i
 
 For example, a molecular graph is a specific type of graph where nodes represent atoms and edges represent chemical bonds. In this case, there are very specific rules about which kinds of connections between atoms are allowed to constitute a *valid* molecule. Such a molecular graph needs completely different rules than an electrical circuit graph, where nodes represents connections and edges represent electrical components.
 
-Ultimately, the 🗺️ graph domain heavily influences how counterfactuals need to be generated, which is why they are a core concept of the ``vgd_counterfactuals`` library. Currently, the following domains are supported:
+Ultimately, the *🗺️ graph domain* heavily influences how counterfactuals need to be generated, which is why they are a core concept of the ``vgd_counterfactuals`` library. Currently, the following domains are supported:
 
 - **Simple Color Graphs**: For testing and demonstration purposes, where nodes are colored and edges connect nodes of different colors.
 - **Molecular Graphs**: Using RDKit and SMILES notation, where nodes represent atoms and edges represent chemical bonds.
