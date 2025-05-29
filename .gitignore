@@ -1,6 +1,11 @@
 venv/*
+.venv/*
+
 dist/*
 vgd_counterfactuals/experiments/results/*
 vgd_counterfactuals/examples/results/*
+
 .vscode/*
-__pycache__/*
+.idea/*
+
+**/__pycache__/*
