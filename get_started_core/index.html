@@ -1,0 +1,736 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../installation/">
+      
+      
+        <link rel="next" href="../get_started_example/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Core Concepts - VGD Counterfactuals</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto+Condensed:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto Condensed";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#core-concepts" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="VGD Counterfactuals" class="md-header__button md-logo" aria-label="VGD Counterfactuals" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            VGD Counterfactuals
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Core Concepts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="VGD Counterfactuals" class="md-nav__button md-logo" aria-label="VGD Counterfactuals" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    VGD Counterfactuals
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Get Started
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Get Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Core Concepts
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Core Concepts
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#counterfactual-mining" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚒️ Counterfactual Mining
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="⚒️ Counterfactual Mining">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-are-counterfactuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      What are Counterfactuals?
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#counterfactuals-in-other-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      Counterfactuals in other Domains
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-counterfactuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Counterfactuals
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      🗺️ Graph Domains
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🗺️ Graph Domains">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#domain-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      📝 Domain Representation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modularization" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧩 Modularization
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../get_started_example/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Introduction by Example
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Tutorials
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials_megan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Using MEGAN
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#counterfactual-mining" class="md-nav__link">
+    <span class="md-ellipsis">
+      ⚒️ Counterfactual Mining
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="⚒️ Counterfactual Mining">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-are-counterfactuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      What are Counterfactuals?
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#counterfactuals-in-other-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      Counterfactuals in other Domains
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graph-counterfactuals" class="md-nav__link">
+    <span class="md-ellipsis">
+      Graph Counterfactuals
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#graph-domains" class="md-nav__link">
+    <span class="md-ellipsis">
+      🗺️ Graph Domains
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🗺️ Graph Domains">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#domain-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      📝 Domain Representation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#modularization" class="md-nav__link">
+    <span class="md-ellipsis">
+      🧩 Modularization
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="core-concepts">Core Concepts</h1>
+<p>This section will introduce the core concepts of the <code>vgd_counterfactuals</code> library including the idea of <strong>⚒️ counterfactual mining</strong>, <strong>🗺️ graph domains</strong> and <strong>🧩 modularization</strong>.</p>
+<h2 id="counterfactual-mining">⚒️ Counterfactual Mining</h2>
+<h3 id="what-are-counterfactuals">What are Counterfactuals?</h3>
+<p>The core idea of counterfactuals&mdash;independent of the data structure for now&mdash;is to find elements which represent only small modifications regarding the original element, but cause a large deviation in the model's property prediction.</p>
+<p>Mathematically, this can be expressed as an optimization problem in which we want to simultaneously <em>minimize the distance</em> to the original element and <em>maximize the difference</em> to the original model prediction.</p>
+<h3 id="counterfactuals-in-other-domains">Counterfactuals in other Domains</h3>
+<p>In other application domains, the previously described optimization problem is non-trivial to solve, as the space of possible modifications is extremely large and only a small subset of modifications leads to a valid element.</p>
+<p>In image processing, for example, pixels are represented as continuous values, and the space of possible modifications is infinite. Furthermore, a counterfactual modification should itself represent a valid image in the context of the underlying task to be meaningful. The modification of a handwritten digit should result in something that still looks like a digit, and&mdash;crucially&mdash;not a random noise pattern. Due to these constraints, these domains have to use more sophisticated methods to solve the non-trivial optimization problem of finding counterfactual samples. In image generation, for instance one possible approach would be to use gradient descent to iteratively modify the original image using a joint objective function that combines the distance to the original image and the difference in model prediction.</p>
+<p>In natural language processing, the space of possible modifications is at least discrete, but still very large since there is an extremely large number of words which could be inserted, removed or replaced at any position in a given text.</p>
+<h3 id="graph-counterfactuals">Graph Counterfactuals</h3>
+<p>In contrast to these previously mentioned domains, graph data structures are much easier to handle. For one thing, graphs are discrete structures for which nodes and edges can either exist or not exist. Additionally, the <em>vocabulary</em> of different node and edge types is usually much smaller than with natural language, for instance.</p>
+<p>Therefore, one possible approach to generate counterfactuals&mdash;infeasible in other domains&mdash;is to generate all possible modifications of the original element, obtain the model's prediction for each of these modifications and then filter the modifications that lead to the largest deviation in the model's prediction. This is the basic approach taken by the <code>vgd_counterfactuals</code> library.</p>
+<h2 id="graph-domains">🗺️ Graph Domains</h2>
+<p>One important consideration for the generation of counterfactuals as described in the previous paragraph is that <em>not all graphs are the same</em>. The rules of what constitutes a valid graph structure&mdash;and what modifications are allowed&mdash;depend on the <em>domain</em> of where the graph originates from.</p>
+<p>For example, a molecular graph is a specific type of graph where nodes represent atoms and edges represent chemical bonds. In this case, there are very specific rules about which kinds of connections between atoms are allowed to constitute a <em>valid</em> molecule. Such a molecular graph needs completely different rules than an electrical circuit graph, where nodes represents connections and edges represent electrical components.</p>
+<p>Ultimately, the 🗺️ graph domain heavily influences how counterfactuals need to be generated, which is why they are a core concept of the <code>vgd_counterfactuals</code> library. Currently, the following domains are supported:</p>
+<ul>
+<li><strong>Simple Color Graphs</strong>: For testing and demonstration purposes, where nodes are colored and edges connect nodes of different colors.</li>
+<li><strong>Molecular Graphs</strong>: Using RDKit and SMILES notation, where nodes represent atoms and edges represent chemical bonds.</li>
+</ul>
+<h3 id="domain-representation">📝 Domain Representation</h3>
+<p>The <code>vgd_counterfactuals</code> library builds on top of the <strong>Visual Graph Datasets (VGD)</strong> library for it's graph representation. Consequently, it borrows the VGD concept of the <em>📝 domain representation</em>. In the VGD library, each graph can be represented either generically as a graph structure with numeric node and edge features (ideal for machine learning applications) or in a domain-specific <em>string</em> format.</p>
+<p>An example of such a domain-specific string representation is the SMILES (Simplified Molecular Input Line Entry System) notation for molecular graphs, which is a widely used format to represent chemical structures as strings. The caffeine molecule, for example, can be represented as the SMILES string <code>CN1C=NC2=C1C(=O)N(C(=O)N2C)C</code>. This format is very compact and allows for easy sharing and storage of molecular graphs. More importantly, this exchange format is the foundation for many domain-specific tools such as the cheminformatics toolkit RDKit.</p>
+<h2 id="modularization">🧩 Modularization</h2>
+<p>The goal of the <code>vgd_counterfactuals</code> library is to be <em>customizable</em> and to provide a <strong>modular framework</strong> for counterfactual generation. This means that individual components such as the model, the neighborhood function etc. can be swapped out and/or be replaced with custom implementations.</p>
+<p>The library is designed around the following core components which can be assembled to interact with each other:</p>
+<ul>
+<li><strong>Neighborhood Function.</strong> Given the <em>📝 domain representation</em> of a graph structure, this function should return the domain representations of it's immediate neighbors&mdash;meaning all valid graphs with an edit distance of 1. The neighborhood function is domain-specific and will have to be implemented or customized for each new graph domain.</li>
+<li><strong>Counterfactual Distance Function.</strong> Given an original graph and a modified graph, as well as the corresponding model predictions, this function is meant to return a numeric value that represents a measure of how different the two <em>predictions</em> are. This function will have to be supplied by the user as it depends on the specific circumstances. For instance, different distance functions will be necessary for regression tasks than for classification tasks. Another important consideration is that sometimes only one direction of the distance matters, e.g. increasing/decreasing the value in a regression task.</li>
+<li><strong>Predictor Model.</strong> In principle, the library is meant to be agnostic to the specific model implementation, meaning that it should be possible to generate counterfactuals based on <em>any</em> model. However, to make a given model work with the library, one needs to supply an adapter function which accepts the domain representation of a graph, queries the model and returns the model's prediction.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.expand", "navigation.sections", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+    
+  </body>
+</html>
