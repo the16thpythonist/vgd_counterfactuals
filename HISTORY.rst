@@ -113,3 +113,15 @@ TODO:
 - Fixed the problem that the ``dimorphite-dl`` package was no longer available on pypi and replaced it 
   with an alternative package.
   
+0.3.12 - 03.09.2025
+-------------------
+
+- Removed ``dimorphite-dl`` as a dependency due to the problems with the PyPi package. The protonation functionality 
+  is still available if the user installs ``dimorphite-dl`` manually into their environment but will not be available by 
+  default.
+
+0.3.13 - 03.09.2025
+-------------------
+
+- Bumped the version of `visual_graph_datasets` to 0.15.7
+- Updated readme

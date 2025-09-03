@@ -1,88 +1,128 @@
-======================
-Development Cheatsheet
-======================
+Testing with Pytest
+===================
 
-Poetry
-======
+During development it sometimes makes sense to run the tests only for a single version of python first. This can 
+be done by using [pytest](https://docs.pytest.org/en/stable/) directly. To do this first make sure that pytest 
+is installed in the current environmnent:
 
-Setting up virtualenv development environment
----------------------------------------------
+.. code-block:: bash
 
-This project uses Poetry_ for package managment
+    uv tool install pytest
 
-First you need to create a new ``virtualenv`` in the root directory of the project. Then you need to
-activate that environment and install Poetry_ into it.
+Then you can invoke the ``pytest`` command on the tests folder:
 
-.. code-block:: shell
+.. code-block:: bash
 
-    python3 -m venv ./
-    ./venv/bin/activate
-    pip3 install poetry
-
-Then you can use ``poetry install`` to automatically install all the package dependencies listed within the
-``pyproject.toml`` file.
-
-.. code-block:: shell
-
-    python3 -m poetry install
-    python3 -m poetry env use ./venv/bin/python
-
-**NOTE:** Whenever invoking any poetry command within the virtualenv it is
-*necessary* to use the the format ``python -m poetry`` instead of just ``poetry`` because the latter will
-always attempt to use the system python binary and not the venv binary!
-
-.. _Poetry: https://python-poetry.org/
+    pytest tests
 
 
-Git
-===
+Linting with Ruff
+=================
 
-Add Remote Repository
----------------------
+Linters apply a set of rules on the codebase to check if the written code complies with certain coding guidelines. 
+In general linters are used to keep and enforce a set of language-specific best practices across a code base and 
+across a set of different developers.
+This project uses the [ruff](https://github.com/astral-sh/ruff) linter, which can be installed like this:
 
-It makes sense to directly supply a Github personal auth token when registering a new remote location for
-the local repository, because that will remove any hassle with authentication when trying to push in the
-future.
+.. code-block:: bash
 
-.. code-block:: shell
+    uv tool install ruff
 
-    git remote add origin https:://[github_username]:[github_token]@github.com/the16thpythonist/vgd_counterfactuals.git
-    git push origin master
+To check the code against the linting rules use the ``ruff check`` command in the top-level folder:
 
+.. code-block:: bash
 
-Create Anonymous Github Repository
-----------------------------------
-
-Some journals / conferences use a double blind review process, which means that all aspects of a submission
-need to be anonymized. This also includes the code that is submitted alongside the paper. This project
-already implements the ``anon`` and ``de-anon`` commands which can be used to replace potentially identifying
-information about the authors with random hashes.
-
-But beyond the contents of the repository, the repository itself needs to be anonymous. This means you have
-to create a new github account and create a new repository there.
-
-To do this you can follow these steps:
-
-**(1)** Create a `new gmail account`_
-
-**(2)** Use that to create a `new github account`_ as well
-
-**(3)** Make sure to retrieve a personal access token for that account from the github developer settings
-
-**(4)** Setup a new remote location for your local repository
-
-.. code-block:: shell
-
-    git remote add anon https://[username]:[access_token]@github.com/[username]/vgd_counterfactuals.git
-
-**(5)** Create a new *orphan* branch and push to the repo
-
-.. code-block:: shell
-
-    git checkout -b --orphan anon
-    git commit -a -m "anon"
-    git push anon anon
+    ruff check .
 
 
-.. _new gmail account: https://accounts.google.com/signup/v2/webcreateaccount?flowName=GlifWebSignIn&flowEntry=SignUp
-.. _new github account: https://github.com/join
+Bumping Version for a new Release
+================================= 
+
+To release a new version of the package, the version string has to be updated throughout all the different 
+places where this version string is used in the text. In this project, this is handled automatically 
+using the [bump-my-version](https://github.com/callowayproject/bump-my-version) tool, which can be 
+installed like this:
+
+.. code-block:: bash
+
+    uv tool install bump-my-version
+
+One of the following commands can then be used to bump the version either for a patch, minor or major release: 
+
+.. code-block:: bash
+
+    bump-my-version bump -v patch
+    bump-my-version bump -v minor
+    bump-my-version bump -v major
+
+The configuration of which files are being updated and how the version is parsed etc. can be found in a 
+tool section of the ``pyproject.toml``
+
+
+Building a new Package Version
+==============================
+
+Before a new version of the package can be published on PyPi for example, the code has to be built first. This 
+can be done with uv's ``build`` command like this:
+
+.. code-block:: bash
+
+    uv build --python=3.10
+
+If it doesn't already exist, this command will create a new ``dist`` folder where the built tarball and wheel of 
+the current version (as defined in the pyproject.toml file) are saved.
+
+
+Publishing a new Version to PyPi
+================================
+
+[twine](https://twine.readthedocs.io/en/stable/) is a python library that is specifically intended for publishing python 
+packages to the package indices such as PyPi. Twine can be installed like this:
+
+.. code-block:: bash
+
+    uv tool install twine
+
+After this the ``twine`` command is available:
+
+.. code-block:: bash
+
+    twine --help
+
+**Checking the distribution. ** Twine assumes that the built distribution files (tarball and wheel) already exist in the 
+project's ``dist`` folder (see "Building a New Package Version"). The ``twine check`` command can be used to check 
+these distribution files for correctness before actually uploading them. This command will for example check the 
+syntax of the README file to make sure it can be properly rendered on the PyPi website.
+
+.. code-block:: bash
+
+    twine check dist/*
+    
+**Uploading to PyPi.** Finally, the ``twine upload`` command can be used to actually upload the distribution files 
+to the package index.
+
+    twine upload --username='__token__' --password='[your password]' dist/*
+
+
+Documentation with MkDocs
+=========================
+
+The documentation is done with [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). The documentation configuration 
+can be found in the ``mkdocs.yml`` file and the actual markdown files are in the top-level ``docs`` folder of the project.
+
+**Local Development.** To view the local dev version of the documentation, you can use the ``mkdocs serve`` command:
+like this:
+
+.. code-block:: bash
+
+    mkdocs serve    
+
+This will start a development web server to serve the static doc files which can then be viewed with a browser.
+
+**Publishing to Github Pages.** The production version of the documentation is hosted on Github Pages. Once a sufficient update 
+of the documentation was written locally, these changes can be published to the Gh Pages branch of the remote repository by 
+using the following command:
+
+.. code-block:: bash
+
+    mkdocs gh-deploy --force

@@ -21,7 +21,6 @@ from vgd_counterfactuals.generate.molecules import get_valid_bond_additions
 from vgd_counterfactuals.generate.molecules import get_valid_bond_removals
 from vgd_counterfactuals.generate.molecules import is_bridge_head_carbon
 from vgd_counterfactuals.generate.molecules import is_nitrogen_nitrogen_sulfur
-from vgd_counterfactuals.generate.molecules import fix_protonation_dimorphite
 from .util import ARTIFACTS_PATH
 
 
@@ -60,18 +59,6 @@ def test_bug_single_atom_counterfactuals():
     # We want to make sure that none of the generated neighbors is just a single atom!
     for data in neighbors:
         assert len(data['value']) > 1
-    
-
-def test_fix_protonation_dimorphite():
-    """
-    The ``fix_protonation_dimorphite`` function should take a list of SMILES and fix them to account for
-    the correct protonation. The resulting list of SMILES may contain more SMILES that originally entered
-    because there may be different variants for the protonation.
-    """
-    # This is a particular molecule where the sulfur atom should not be protonated at the given standard
-    # ph range, which should be reflected in the result.
-    fixed = fix_protonation_dimorphite(['C1=CC=CC=C1CCCC(S)=O'], 6.4, 8.4)
-    assert 'O=C([S-])CCCc1ccccc1' in fixed
 
 
 def test_get_neighborhood():

@@ -51,7 +51,7 @@ Then in the main folder run a ``pip install``:
 .. code-block:: console
 
     cd vgd_counterfactuals
-    python3 -m pip install .
+    uv pip install .
 
 Afterwards, you can check the install by invoking the CLI:
 

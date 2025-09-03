@@ -1,11 +1,21 @@
 import itertools
 import typing as t
-import dimorphite_dl
 from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from rdkit.Chem import AllChem
 
 from vgd_counterfactuals.utils import invert_dict
+
+# 03.09.2025 
+# We've deprecated the protonation fixing functionality from the package by default
+# due to the issues that arose with the PyPi package of dimorphite-dl.
+# It is still possible to use this functionality when installing dimorphite-dl
+# manually into the environment.
+try:
+    import dimorphite_dl
+    HAS_DIMORPHITE = True
+except ImportError:
+    HAS_DIMORPHITE = False
 
 
 DEFAULT_ATOM_VALENCE_MAP = {
@@ -68,49 +78,6 @@ def is_oxygen_halogen(mol: Chem.Mol, pattern: str = '[O][O,F,Cl,Br,I]'):
     return is_match
 
 
-# Protonation
-# -----------
-# Oftentimes, molecules exist in various different protonation states. That means that for a given molecule 
-# not all of the are always properly bonded to a hydrogen atom, but that they might exist in their charged 
-# form. For moderately large molecules, there exist many different permutations of which atoms are charged 
-# and which are properly protonated. Which of those states are possible at all depend on the pH of the 
-# environment.
-# In certain applications is might make sense to consider these different protonation states when generating 
-# the local neighborhood, which is implemented here.
-
-
-def fix_protonation_dimorphite(smiles_list: t.List[str],
-                               min_ph: float,
-                               max_ph: float,
-                               max_variants: float = 10,
-                               ) -> t.List[str]:
-    """
-    This method generates the different protonation states in a given ph range ``min_ph`` and ``max_ph`` for 
-    each molecule represented as a SMILES string in the given ``smiles_list``.
-    
-    :param smiles_list: A list of smiles strings where each element represents a molecule for which to generate 
-        the protonation states.
-    :param min_ph: The min pH
-    :param max_ph: The max pH
-    :param max_variants: The max number of different protonation states to generate for each molecule.
-    
-    :returns: A list of SMILES which has either the same number of elements as the originally given list 
-        but more likely has more elements.
-    """
-    
-    result = list(itertools.chain.from_iterable(
-        [dimorphite_dl.run(
-            smiles,
-            min_ph=min_ph,
-            max_ph=max_ph,
-            max_variants=max_variants,
-            pka_precision=1.0,
-        ) for smiles in smiles_list]
-    ))
-
-    return result
-
-
 # Counterfactual generation
 # --------------------------
 # The following functions implement the neighborhood generation process for the molecular graphs 
@@ -128,10 +95,10 @@ def get_neighborhood(smiles: str,
                      use_bond_additions: bool = False,
                      use_bond_removals: bool = True,
                      # protonation related parameters
-                     fix_protonation: bool = False,
-                     max_ph: float = 7.4,
-                     min_ph: float = 7.4,
-                     pka_precision: float = 1.0,
+                     fix_protonation: bool = False, # deprecated
+                     max_ph: float = 7.4,           # deprecated
+                     min_ph: float = 7.4,           # deprecated
+                     pka_precision: float = 1.0,    # deprecated
                      ) -> t.List[str]:
     """
     Given a ``smiles`` representation of a molecule, this function will return a list of the SMILES
@@ -205,23 +172,34 @@ def get_neighborhood(smiles: str,
     # correctly protonated for the target pH range of the task.
     # This is why we introduce the option to fix the protonation state of these with an external tool here.
     if fix_protonation:
-        neighbors_protonated = []
         
-        for data in neighbors:
+        if HAS_DIMORPHITE:
+        
+            neighbors_protonated = []
             
-            smiles_protonated = dimorphite_dl.run(
-                data['value'],
-                min_ph=min_ph,
-                max_ph=max_ph,
-                max_variants=10,
-                label_states=False,
-                pka_precision=pka_precision,
-            )
-            
-            for smiles in smiles_protonated:
-                neighbors_protonated.append({**data, 'value': smiles})
+            for data in neighbors:
+                
+                smiles_protonated = dimorphite_dl.protonate_smiles(
+                    data['value'],
+                    min_ph=min_ph,
+                    max_ph=max_ph,
+                    max_variants=10,
+                    label_states=False,
+                    pka_precision=pka_precision,
+                )
+                
+                for smiles in smiles_protonated:
+                    neighbors_protonated.append({**data, 'value': smiles})
 
-        neighbors = neighbors_protonated
+            neighbors = neighbors_protonated
+
+        else:
+            raise DeprecationWarning(
+                'The `dimorphite_dl` package is not installed by default. '
+                'The protonation fixing functionality has been deprecated. '
+                'Please install "dimorphite-dl" manually into your environment to '
+                'use this functionality.'
+            )
 
     return neighbors
 

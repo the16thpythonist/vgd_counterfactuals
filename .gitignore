@@ -10,3 +10,5 @@ vgd_counterfactuals/examples/results/*
 .idea/*
 
 **/__pycache__/*
+
+tests/artifacts/*
